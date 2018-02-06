@@ -102,6 +102,9 @@ private:
       PixelColorStorage &p = sub_pixels[i][j];
       // Part 1: Overwrite PixelColorStorage p using Color c.
       //         Pay attention to different data types.
+      p[0] = c.r *255;
+      p[1] = c.g *255;
+      p[2] = c.b *255;
 
     }
 
@@ -112,8 +115,26 @@ private:
     }
 
     Color get_pixel_color() {
-      return Color(sub_pixels[0][0].data());
+      // return Color(sub_pixels[0][0].data());
       // Part 2: Implement get_pixel_color() for supersampling.
+      float r = 0;
+      float g = 0;
+      float b = 0;
+      float count = 0;
+      for (int i = 0; i < samples_per_side; i++) {
+        for (int j = 0; j < samples_per_side; j++) {
+          r += sub_pixels[i][j][0];
+          g += sub_pixels[i][j][1];
+          b += sub_pixels[i][j][2];
+          count += 1;
+        }
+      }
+      r = r/count;
+      g = g/count;
+      b = b/count;
+      return Color({r/255, g/255, b/255});
+
+
 
     }
 

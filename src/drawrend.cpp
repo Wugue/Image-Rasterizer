@@ -494,9 +494,115 @@ void DrawRend::rasterize_triangle( float x0, float y0,
   // Part 4: Add barycentric coordinates and use tri->color for shading when available.
   // Part 5: Fill in the SampleParams struct and pass it to the tri->color function.
   // Part 6: Pass in correct barycentric differentials to tri->color for mipmapping.
+    // for (int y = 0; y < height; y++) {
+    //   for (int x = 0; x < width; x++) {
+    //     float l1 = -(x - x0)*(y1 - y0) + (y - y0)*(x1 - x0);
+    //     float l2 = -(x - x1)*(y2 - y1) + (y - y1)*(x2 - x1);
+    //     float l3 = -(x - x2)*(y0 - y2) + (y - y2)*(x0 - x2);
+    //     if (l1 >= 0 && l2 >= 0 && l3 >= 0) {
+    //       samplebuffer[y][x].fill_pixel(color);
+    //     }
+    //   }
+    // }
+    // for (int y = 0; y < height; y++) {
+    //   for (int x = 0; x < width; x++) {
+    //     float s = sqrt(sample_rate);
+    //     float j2 = 0;
+    //     for (float j = y + (1/s)/2; j < y + 1; j += 1/s) {
+    //       float i2 = 0;
+    //       for (float i = x + (1/s)/2; i < x + 1; i += 1/s) {
+    //         float l1 = -(i - x0)*(y1 - y0) + (j - y0)*(x1 - x0);
+    //         float l2 = -(i - x1)*(y2 - y1) + (j - y1)*(x2 - x1);
+    //         float l3 = -(i - x2)*(y0 - y2) + (j - y2)*(x0 - x2);
+    //         if (l1 >= 0 && l2 >= 0 && l3 >= 0) {
+    //           samplebuffer[y][x].fill_color(j2, i2, color);
+    //         }
+    //         i2 += 1;
+    //       }
+    //       j2 += 1;
+    //     }
+        
+    //   }
+    // }
+    // for (int y = 0; y < height; y++) {
+    //   for (int x = 0; x < width; x++) {
+    //     float l1 = -(x - x0)*(y1 - y0) + (y - y0)*(x1 - x0);
+    //     float l2 = -(x - x1)*(y2 - y1) + (y - y1)*(x2 - x1);
+    //     float l3 = -(x - x2)*(y0 - y2) + (y - y2)*(x0 - x2);
+    //     float t1 = -(x - x1)*(y0 - y1) + (y - y1)*(x0 - x1);
+    //     float t2 = -(x - x0)*(y2 - y0) + (y - y0)*(x2 - x0);
+    //     float t3 = -(x - x2)*(y1 - y2) + (y - y2)*(x1 - x2);
+    //     if (l1 >= 0 && l2 >= 0 && l3 >= 0) {
+    //       if (tri != NULL) {
+    //         float a = (-(x-x1)*(y2-y1)+(y-y1)*(x2-x1))/(-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
+    //         float b = (-(x-x2)*(y0-y2)+(y-y2)*(x0-x2))/(-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+    //         float c = 1-a-b;
+    //         SampleParams sp = SampleParams();
+    //         sp.psm = psm;
+    //         sp.lsm = lsm;
+    //         samplebuffer[y][x].fill_pixel(tri->color(Vector3D({a, b, c}), NULL, NULL, sp));
+    //       } else {
+    //         samplebuffer[y][x].fill_pixel(color);
+    //       }
+    //     } else if (t1 >= 0 && t2 >= 0 && t3 >= 0) {
+    //       if (tri != NULL) {
+    //         float a = (-(x-x1)*(y2-y1)+(y-y1)*(x2-x1))/(-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
+    //         float b = (-(x-x2)*(y0-y2)+(y-y2)*(x0-x2))/(-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+    //         float c = 1-a-b;
+    //         SampleParams sp = SampleParams();
+    //         sp.psm = psm;
+    //         sp.lsm = lsm;
+    //         samplebuffer[y][x].fill_pixel(tri->color(Vector3D({a, b, c}), NULL, NULL, sp));
+    //       } else {
+    //         samplebuffer[y][x].fill_pixel(color);
+    //       }
+    //     }
+    //   }
+    // }
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        float s = sqrt(sample_rate);
+        float j2 = 0;
+        for (float j = y + (1/s)/2; j < y + 1; j += 1/s) {
+          float i2 = 0;
+          for (float i = x + (1/s)/2; i < x + 1; i += 1/s) {
+            float l1 = -(i - x0)*(y1 - y0) + (j - y0)*(x1 - x0);
+            float l2 = -(i - x1)*(y2 - y1) + (j - y1)*(x2 - x1);
+            float l3 = -(i - x2)*(y0 - y2) + (j - y2)*(x0 - x2);
+            float t1 = -(i - x1)*(y0 - y1) + (j - y1)*(x0 - x1);
+            float t2 = -(i - x0)*(y2 - y0) + (j - y0)*(x2 - x0);
+            float t3 = -(i - x2)*(y1 - y2) + (j - y2)*(x1 - x2);
+            if ((l1 >= 0 && l2 >= 0 && l3 >= 0) || (t1 >= 0 && t2 >= 0 && t3 >= 0)) {
+              if (tri != NULL) {
+                float a = (-(x-x1)*(y2-y1)+(y-y1)*(x2-x1))/(-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
+                float b = (-(x-x2)*(y0-y2)+(y-y2)*(x0-x2))/(-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+                float c = 1-a-b;
+                float ax = (-(x+1-x1)*(y2-y1)+(y-y1)*(x2-x1))/(-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
+                float bx = (-(x+1-x2)*(y0-y2)+(y-y2)*(x0-x2))/(-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+                float cx = 1-ax-bx;
+                float ay = (-(x-x1)*(y2-y1)+(y+1-y1)*(x2-x1))/(-(x0-x1)*(y2-y1)+(y0-y1)*(x2-x1));
+                float by = (-(x-x2)*(y0-y2)+(y+1-y2)*(x0-x2))/(-(x1-x2)*(y0-y2)+(y1-y2)*(x0-x2));
+                float cy = 1-ay-by;
+                SampleParams sp = SampleParams();
+                sp.psm = psm;
+                sp.lsm = lsm;
+
+                samplebuffer[y][x].fill_pixel(tri->color(Vector3D({a, b, c}), Vector3D({ax, bx, cx}), Vector3D({ay, by, cy}), sp));
+                //samplebuffer[y][x].fill_color(j2, i2, tri->color(Vector3D({a, b, c}), Vector3D({ax, bx, cx}), Vector3D({ay, by, cy}), sp));
+              } else {
+                samplebuffer[y][x].fill_color(j2, i2, color);
+              }
+            }
+            i2 += 1;
+          }
+          j2 += 1;
+        }
+      }
+    }
 
 
 }
+
 
 
 

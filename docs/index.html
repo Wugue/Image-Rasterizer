@@ -25,7 +25,7 @@
 
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
 <h1 align="middle">Project 1: Rasterizer</h1>
-<h2 align="middle">YOUR NAME, CS184-??</h2>
+<h2 align="middle">Eric Tsai, CS184-aaf</h2>
 
 <br><br>
 
@@ -38,29 +38,15 @@
 
 <h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
 
-<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
+<p>For each triangle, go through each pixel in the image, check if the midpoint of the pixel is inside the triangle, fill the pixel if it is. This algorithm runs in o(n^2) time since it goes through every pixel for each triangle, while an algorithm that checks each sample in the bounding box of every triangle would also run on o(n^2) time, one loop for every triangle and 1 loop for every sample.
+</p>
 
 <div align="middle">
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/image1.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
-      </td>
-      <td>
-        <img src="images/image2.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
-      </td>
-    </tr>
-    <br>
-    <tr>
-      <td>
-        <img src="images/image3.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
-      </td>
-      <td>
-        <img src="images/image4.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/1-1.png" align="middle" width="600px"/>
+        <figcaption align="middle">Test4</figcaption>
       </td>
     </tr>
   </table>
@@ -69,23 +55,152 @@
 
 <h3 align="middle">Part 2: Antialiasing triangles</h3>
 
+<p>For each pixel, I divided the pixel into n subpixels, and for each subpixel I checked if the midpoint was inside the triangle and filled the color if it was. Then for each pixel, i took all the color values of the subpixels and averaged them, returning the averaged value. The main changes in the pipeline was adding 2 nested loops so that it checked the midpoint of each sub-pixel instead of just each pixel, and I also modified the get_pixel_color function so that it took the average values inside a pixel.
+</p>
 
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/2-1.png" align="middle" width="600px"/>
+        <figcaption align="middle">1px Supersampling</figcaption>
+      </td>
+      <td>
+        <img src="images/2-2.png" align="middle" width="600px"/>
+        <figcaption align="middle">4px Supersampling</figcaption>
+      </td>
+    </tr>
+    
+  </table>
+  <table style="width=100%">
+    
+    <tr>
+      <td>
+        <img src="images/2-3.png" align="middle" width="600px"/>
+        <figcaption align="middle">16px Supersampling</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
 <h3 align="middle">Part 3: Transforms</h3>
 
+<p> This individual is attempting to swim. </p>
 
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/3-1.png" align="middle" width="600px"/>
+        <figcaption align="middle">Swimming Robot</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
 <h2 align="middle">Section II: Sampling</h2>
 
 <h3 align="middle">Part 4: Barycentric coordinates</h3>
 
+<p>To implement barycentric coordinates, I took the ratios of the shortest distance from each corner to the opposite edge and the shortest distance from each corner to the line parallel to the opposite edge that contains the specified points. This way, for each point, we get a 3 ratios/values that reflect proportionally the distance the point is from each of the three corners, and those values add up to 1. Then I set the color of the point to the sum of: the ratio multiplied by the color at each angle. This way, the closer the point is to an angle, the more the color of the angle influences the color of the point. </p> <p>
+In this picture of a triangle, let’s look at the line between the red corner and the blue corner. At the red corner, the point colors are pure red. If you move down the line towards the blue corner, the blue value gradually increases as the red decreases and the color turns to purple, then to blue as you approach the blue corner.
+</p>
+
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/4-1.png" align="middle" width="600px"/>
+        <figcaption align="middle">Triangle Example</figcaption>
+      </td>
+      <td>
+        <img src="images/4-2.png" align="middle" width="600px"/>
+        <figcaption align="middle">Test7</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
 
 <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+
+<p>For pixel sampling I applied the rasterization concepts in part 1 and part 2 to sample points in textures. Nearest sampling just fills the color of each pixel with the color of the texture sample closest to the midpoint of the pixel. Bilinear sampling gets a color value from interpolating the colors of the four texture samples closest to the midpoint of the pixel. Each texture sample gets a proportional ratio based on distance like in barycentric coordinates used in part 2.</p> <p>
+
+The first image uses 1 sample per pixel nearest sampling. You notice that the  edges are very jagged.</p> <p>
+The second image uses 16 samples per pixel nearest sampling, The difference is barely noticeable, but some of the details are a little sharper because the pixel gets a color from a texture sample that’s closer to its midpoint. In the zoom-in box, you can see that the white vertical line at the left of the image fades gradually into the yellow instead of having a hard shift into yellow like in the first picture.</p> <p>
+The third image uses 1 pixel bilinear sampling. Since the color is now interpolated from more than just 1 point, it is noticeable less jagged. Instead of having awkward white pixels side by side with hard yellow everywhere like in the previous two images, the yellow fades gradually into the instances of white.</p> <p>
+The fourth image uses 16 pixel bilinear sampling. The sample points are more accurate, but this the texture of this image doesn’t have multiple extremely precise shifts in color at the pixel level, the difference is barely noticeable inside the zoom-in box. But if you look at the image at the whole and see the thin wavy line above the circle, the line is noticeably less jagged because of how thin/sharp the line is in the texture.
+</p>
+<p>Note: the green text on the bottom two images was mislabeled as nearest pixel sampling instead of bilinear because I had an error in my if:else loop. The bottom images were rendered using bilinear sampling.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/5-1.png" align="middle" width="600px"/>
+        <figcaption align="middle">1px Nearest</figcaption>
+      </td>
+      <td>
+        <img src="images/5-2.png" align="middle" width="600px"/>
+        <figcaption align="middle">16px Nearest</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/5-3.png" align="middle" width="600px"/>
+        <figcaption align="middle">1px Bilinear</figcaption>
+      </td>
+      <td>
+        <img src="images/5-4.png" align="middle" width="600px"/>
+        <figcaption align="middle">16px Bilinear</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
 
 <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
 
+<p> 
+For level sampling, I computed the texture coordinates for (x,y), (x+1,y) and (x, y+1), then took the difference of the points to compute the value for the nearest mipmap level. For trilinear sampling, I took the nearest two mipmap levels, and interpolated them to get a weighted texture value to best fit the pixel. Since mipmap values are already computed, rendering the nearest mipmap level only uses a small amount of additional computations to get the nearest level, for a big effect in image quality from antialising effect. Trilinear sampling is another small addition of computation power to interpolate the color values of the nearest two levels for another improvement of image quality and antialiasing effect.
+</p>
 
+<p>
+  Below I rendered a level 0, level nearest, and trilinear sampling of a picture of an anime girl with the svg file from test5.svg. With each change of how mipmap levels are used, the edges become less and less jagged.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/6-1.png" align="middle" width="1000px"/>
+        <figcaption align="middle">L_NEAREST P_NEAREST</figcaption>
+      </td>
+    </tr>
+    
+  </table>
+  
+  <table style="width=100%">
+    
+    <tr>
+      <td>
+        <img src="images/6-2.png" align="middle" width="1000px"/>
+        <figcaption align="middle">L_NEAREST P_NEAREST</figcaption>
+      </td>
+    </tr>
+  </table>
+  <table style="width=100%">
+    
+    <tr>
+      <td>
+        <img src="images/6-3.png" align="middle" width="1000px"/>
+        <figcaption align="middle">P_LINEAR</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
 <h2 align="middle">Section III: Art Competition</h2>
 <p>If you are not participating in the optional art competition, don't worry about this section!</p>

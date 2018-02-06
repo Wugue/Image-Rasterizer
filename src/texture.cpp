@@ -5,27 +5,87 @@ namespace CGL {
 
 Color Texture::sample(const SampleParams &sp) {
   // Part 5: Fill this in.
-  return Color();
+  if (sp.lsm == L_ZERO){
+    if (sp.psm == P_NEAREST){
+      return sample_nearest(sp.p_uv,0);
+    } else {
+      return sample_bilinear(sp.p_uv,0);
+    }
+  } else if (sp.lsm == L_NEAREST){
+    if (sp.psm == P_NEAREST){
+      return sample_nearest(sp.p_uv, get_level(sp));
+    } else {
+      return sample_bilinear(sp.p_uv, get_level(sp));
+    }
+  } else {
+    return sample_trilinear(sp.p_uv, sp.p_dx_uv, sp.p_dy_uv);
+  }
 }
 
 float Texture::get_level(const SampleParams &sp) {
   // Part 6: Fill this in.
-  return 0;
+  float l = fmax(sqrt(pow((sp.p_dx_uv[0]-sp.p_uv[0])*width,2) + pow((sp.p_dx_uv[1]-sp.p_uv[1])*height, 2)), sqrt(pow((sp.p_dy_uv[0]-sp.p_uv[0])*width, 2) + pow((sp.p_dy_uv[1]-sp.p_uv[1])*height, 2)));
+  return log2(l);
 }
 
 Color Texture::sample_nearest(Vector2D uv, int level) {
   // Part 5: Fill this in.
-  return Color();
+  float width = mipmap[level].width;
+  float height = mipmap[level].height;
+  int x = floor(width * uv[0] + 0.5);
+  int y = floor(height * uv[1] + 0.5);
+
+  unsigned char killme [3] = {mipmap[level].texels[y*width*4 + x*4], mipmap[level].texels[y*width*4 + x*4 +1], mipmap[level].texels[y*width*4 + x*4 + 2]};
+  return Color(killme);
 }
 
 Color Texture::sample_bilinear(Vector2D uv, int level) {
   // Part 5: Fill this in.
-  return Color();
+  // Used formula from https://helloacm.com/cc-function-to-compute-the-bilinear-interpolation/
+  float width = mipmap[level].width;
+  float height = mipmap[level].height;
+  int x = floor(width * uv[0]);
+  int y = floor(height * uv[1]);
+  int x2 = floor(width * uv[0]) + 1;
+  int y2 = floor(height * uv[1]) + 1;
+
+  float x2x1 = x2 - x;
+  float y2y1 = y2 - y;
+  float x2x = x2 - uv[0]*width;
+  float y2y = y2 - uv[1]*height;
+  float yy1 = uv[1]*height - y;
+  float xx1 = uv[0]*width - x;
+
+  float p0 = x2x * y2y;
+  float p1 = xx1 * y2y;
+  float p2 = x2x * yy1;
+  float p3 = xx1 * yy1;
+
+  float r0 = mipmap[level].texels[y*width*4 + x*4];
+  float r1 = mipmap[level].texels[y*width*4 + x2*4];
+  float r2 = mipmap[level].texels[y2*width*4 + x*4];
+  float r3 = mipmap[level].texels[y2*width*4 + x2*4];
+  float g0 = mipmap[level].texels[y*width*4 + x*4+1];
+  float g1 = mipmap[level].texels[y*width*4 + x2*4+1];
+  float g2 = mipmap[level].texels[y2*width*4 + x*4+1];
+  float g3 = mipmap[level].texels[y2*width*4 + x2*4+1];
+  float b0 = mipmap[level].texels[y*width*4 + x*4+2];
+  float b1 = mipmap[level].texels[y*width*4 + x2*4+2];
+  float b2 = mipmap[level].texels[y2*width*4 + x*4+2];
+  float b3 = mipmap[level].texels[y2*width*4 + x2*4+2];
+  
+  unsigned char killme [3] = {1.0*(p0*r0 + p1*r1 + p2*r2 + p3*r3)/(x2x1*y2y1), (1.0*p0*g0 + p1*g1 + p2*g2 + p3*g3)/(x2x1*y2y1), (1.0*p0*b0 + p1*b1 + p2*b2 + p3*b3)/(x2x1*y2y1)};
+  return Color(killme);
 }
 
 Color Texture::sample_trilinear(Vector2D uv, Vector2D du, Vector2D dv) {
   // Part 6: Fill this in.
-  return Color();
+  float l = log2(fmax(sqrt(pow((du[0]-uv[0])*width,2) + pow((du[1]-uv[1])*height, 2)), sqrt(pow((dv[0]-uv[0])*width, 2) + pow((dv[1]-uv[1])*height, 2))));
+  float high = ceil(l);
+  float low = floor(l);
+  float chigh = l - low;
+  float clow = high - l;
+  return chigh * sample_nearest(uv, high) + clow * sample_nearest(uv, low);
 }
 
 
